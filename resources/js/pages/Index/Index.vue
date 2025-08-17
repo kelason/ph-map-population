@@ -1,14 +1,14 @@
 <template>
   <div id="app">
-    <BarChart :country="country" :provinces="provinces" :populations="populations" />
+    <PhMap :countryTopoJson="countryTopoJson" :provincesTopoJson="provincesTopoJson" :populations="populations" />
     <br>
   </div>
 </template>
 <script setup>
-import BarChart from '../Components/PhMap.vue';
+import PhMap from '../Components/PhMap.vue';
 defineProps({
-  country: Object,
-  provinces: Object,
+  countryTopoJson: Object,
+  provincesTopoJson: Object,
   populations: Array
 })
 </script>

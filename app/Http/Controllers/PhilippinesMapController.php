@@ -24,14 +24,14 @@ class PhilippinesMapController extends Controller
 
     public function index()
     {
-        $country = $this->countryService->getCountryTopoJSON();
-        $provinces = $this->provinceService->getProvincesTopoJSON();
+        $countryTopoJson = $this->countryService->getCountryTopoJSON();
+        $provincesTopoJson = $this->provinceService->getProvincesTopoJSON();
         $populations = $this->populationService->getPopulationCSV();
         return inertia(
             'Index/Index',
             [
-                'country' => $country,
-                'provinces' => $provinces,
+                'countryTopoJson' => $countryTopoJson,
+                'provincesTopoJson' => $provincesTopoJson,
                 'populations' => $populations
             ]
         );
