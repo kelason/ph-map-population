@@ -8,10 +8,10 @@
         />
         <population-search
             v-model:selectedSearchPopulation="selectedSearchPopulation"
-            :top10Cities="top10Cities"
-            :bottom10Cities="bottom10Cities"
+            :searchBy="searchBy"
             :formatPopulationProvince="formatPopulationProvince"
             :formatNumber="formatNumber"
+            @updateMapData="updateMapData"
         />
         <div>
             <div ref="chart" style="background: linear-gradient(to bottom, #2e9afe, #00bfff, #045fb4); height: 100vh"></div>
@@ -26,7 +26,7 @@ import * as d3 from 'd3';
 import * as topojson from 'topojson';
 import { muniCitiesTopoJsonName } from '../../../utils/constants.js';
 import PopulationDensity from './Pages/PopulationDensity.vue';
-import PopulationSearch from './Pages/PopulationSearch.vue';
+import PopulationSearch from './Pages/PopulationSearch/PopulationSearch.vue';
 import Zoom from './Pages/Zoom.vue';
 
 export default {
@@ -59,6 +59,7 @@ export default {
             path: null,
             colorScale: null,
             allMuniFeatures: [],
+            allProvFeatures: [],
             populationMap: {},
             provincePaths: null,
             zoomBehavior: null,
@@ -66,8 +67,19 @@ export default {
             initialScale: null,
             width: 0,
             height: 0,
-            top10Cities: [],
-            bottom10Cities: [],
+            searchBy: {
+                Cities: {
+                    top10Cities: [],
+                    bottom10Cities: [],
+                },
+                Provinces: {
+                    top10Provinces: [],
+                    bottom10Provinces: [],
+                },
+                Regions: {
+                    topRegions: [],
+                }
+            },
             populationDensity: [
                 {
                     cityName: null,
@@ -81,7 +93,7 @@ export default {
     },
     mounted() {
         this.initializeMap();
-        this.getTopPopulationDataByCities();
+        this.getSearchbyData();
     },
     methods: {
         initializeMap() {
@@ -104,7 +116,7 @@ export default {
             // Create and store zoom behavior
             this.zoomBehavior = d3
                 .zoom()
-                .scaleExtent([1, 8]) // Limit zoom scale
+                .scaleExtent([1, 10]) // Limit zoom scale
                 .on('zoom', (event) => {
                     this.g.attr('transform', event.transform);
                 });
@@ -134,8 +146,8 @@ export default {
             const phCountry = topojson.feature(this.countryTopoJson, this.countryTopoJson.objects['PH_Adm1_Regions.shp']).features;
             this.g.selectAll('.ph').data(phCountry).enter().append('path').attr('class', 'ph').attr('d', this.path);
 
+            this.processData();
             // Process and draw provinces
-            this.processProvinceData();
             this.drawProvinces();
         },
 
@@ -145,8 +157,13 @@ export default {
                 this.populationMap[population.psgc] = population;
             });
         },
+    
+        processData() {
+            this.processPopulationData();
+            this.processProvinceData();
+        },
 
-        processProvinceData() {
+        processPopulationData() {
             this.provincesTopoJson.forEach((provinceData, index) => {
                 const topoJsonFile = provinceData;
                 const topoJsonObjectName = muniCitiesTopoJsonName[index];
@@ -156,6 +173,7 @@ export default {
 
                     features.forEach((feature) => {
                         feature.properties.population = this.populationMap[feature.id][`population_${this.selectedYear}`];
+                        feature.properties.geographic_level = this.populationMap[feature.id].geographic_level;
                     });
 
                     this.allMuniFeatures.push(...features);
@@ -163,18 +181,93 @@ export default {
             });
         },
 
-        getTopPopulationDataByCities() {
-            // For top 10 populations
-            this.top10Cities = [...this.allMuniFeatures].filter((f) => f.properties.population != null);
-            d3.quickselect(this.top10Cities, 10, 0, this.top10Cities.length - 1, (a, b) => b.properties.population - a.properties.population);
-            this.top10Cities.length = 10;
-            this.top10Cities.sort((a, b) => b.properties.population - a.properties.population);
+        processProvinceData() {
+            this.populations.forEach((provinceData) => {
+                provinceData.population = provinceData[`population_${this.selectedYear}`];
+                this.allProvFeatures.push(provinceData);
+            });
+        },
 
-            // For bottom 10 populations
-            this.bottom10Cities = [...this.allMuniFeatures].filter((f) => f.properties.population != null);
-            d3.quickselect(this.bottom10Cities, 9, 0, this.bottom10Cities.length - 1, (a, b) => a.properties.population - b.properties.population);
-            this.bottom10Cities.length = 10;
-            this.bottom10Cities.sort((a, b) => a.properties.population - b.properties.population);
+        // Generic function to get top/bottom N items by population
+        getTopNByPopulation(data, n = 10, getPopulation, top = true) {
+            // Filter out items without population data
+            const filteredData = data.filter(item => getPopulation(item) != null);
+            
+            // Create a copy to avoid mutating original array
+            const result = [...filteredData];
+            
+            // Use quickselect to partially sort the array
+            const quickselectIndex = top ? n : n - 1;
+            const comparator = top 
+                ? (a, b) => getPopulation(b) - getPopulation(a)
+                : (a, b) => getPopulation(a) - getPopulation(b);
+            
+            d3.quickselect(result, quickselectIndex, 0, result.length - 1, comparator);
+            
+            result.length = n;
+            
+            result.sort(top 
+                ? (a, b) => getPopulation(b) - getPopulation(a)
+                : (a, b) => getPopulation(a) - getPopulation(b)
+            );
+            
+            return result;
+        },
+
+        getTopPopulationDataByCities() {
+            // For top 10 cities by population
+            this.searchBy.Cities.top10Cities = this.getTopNByPopulation(
+                this.allMuniFeatures,
+                10,
+                f => f.properties.population,
+                true
+            );
+
+            // For bottom 10 cities by population
+            this.searchBy.Cities.bottom10Cities = this.getTopNByPopulation(
+                this.allMuniFeatures,
+                10,
+                f => f.properties.population,
+                false
+            );
+        },
+
+        getTopPopulationDataByProvinces() {
+            const provinceData = this.allProvFeatures.filter(f => f.geographic_level === 'Prov');
+            
+            // For top 10 provinces by population
+            this.searchBy.Provinces.top10Provinces = this.getTopNByPopulation(
+                provinceData,
+                10,
+                f => f.population,
+                true
+            );
+
+            // For bottom 10 provinces by population
+            this.searchBy.Provinces.bottom10Provinces = this.getTopNByPopulation(
+                provinceData,
+                10,
+                f => f.population,
+                false
+            );
+        },
+
+        getTopPopulationDataByRegions() {
+            const regionData = this.allProvFeatures.filter(f => f.geographic_level === 'Reg');
+            
+            // For top regions by population
+            this.searchBy.Regions.topRegions = this.getTopNByPopulation(
+                regionData,
+                17,
+                f => f.population,
+                true
+            );
+        },
+
+        getSearchbyData() {
+            this.getTopPopulationDataByCities();
+            this.getTopPopulationDataByProvinces();
+            this.getTopPopulationDataByRegions();
         },
 
         drawProvinces() {
@@ -214,6 +307,7 @@ export default {
 
             // Update colors based on selected year
             this.updateMapColors();
+            this.initProvinceLabels();
         },
 
         updateMapColors() {
@@ -224,6 +318,37 @@ export default {
             });
         },
 
+        // Initialize labels with responsive setup
+        initProvinceLabels() {            
+            this.g.selectAll('.province-labels')
+                .data(this.allMuniFeatures)
+                .enter()
+                .append('text')
+                .attr('class', 'province-labels')
+                .attr('transform', d => {
+                    const centroid = this.path.centroid(d);
+                    
+                    // Check if centroid is valid
+                    if (isNaN(centroid[0]) || isNaN(centroid[1])) {
+                        return 'translate(0,0)'; // Fallback
+                    }
+                    
+                    return `translate(${centroid})`;
+                })
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.35em')
+                .text(d => d.properties.adm3_en)
+                .style('font-size', `1px`)
+                .style('fill', 'black')
+                .style('pointer-events', 'none')
+                .style('font-weight', 'bold')
+                .style('paint-order', 'stroke') // Makes text more readable on complex backgrounds
+                .style('stroke', 'white')
+                .style('stroke-width', '0.5px')
+                .style('stroke-linecap', 'round')
+                .style('stroke-linejoin', 'round');
+        },
+
         updateTooltip(d) {
             let targetData = d.target.__data__;
             this.populationDensity.cityName = `<strong>Municipal/City</strong>: ${targetData.properties.adm3_en}, ${this.formatPopulationProvince(targetData.properties.adm2_psgc)}`;
@@ -231,7 +356,7 @@ export default {
         },
 
         updateMapData() {
-            this.processProvinceData();
+            this.processData();
             this.drawProvinces();
         },
 
@@ -343,5 +468,29 @@ body {
 
 .zoom-controls button:hover {
     background-color: #f5f5f5;
+}
+
+.province-labels {
+    font-size: 10px;
+    font-weight: bold;
+    paint-order: stroke;
+    stroke: white;
+    stroke-width: 2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@media (max-width: 768px) {
+    .province-labels {
+        font-size: 8px;
+        stroke-width: 1.5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .province-labels {
+        font-size: 7px;
+        display: none; /* Or show on hover only */
+    }
 }
 </style>
