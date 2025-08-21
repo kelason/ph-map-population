@@ -119,6 +119,7 @@ export default {
                 .scaleExtent([1, 10]) // Limit zoom scale
                 .on('zoom', (event) => {
                     this.g.attr('transform', event.transform);
+                    this.updateProvinceLabels(event.transform);
                 });
 
             // Apply zoom behavior to the SVG
@@ -307,7 +308,6 @@ export default {
 
             // Update colors based on selected year
             this.updateMapColors();
-            this.initProvinceLabels();
         },
 
         updateMapColors() {
@@ -319,7 +319,7 @@ export default {
         },
 
         // Initialize labels with responsive setup
-        initProvinceLabels() {            
+        initProvinceLabels() { 
             this.g.selectAll('.province-labels')
                 .data(this.allMuniFeatures)
                 .enter()
@@ -347,6 +347,20 @@ export default {
                 .style('stroke-width', '0.5px')
                 .style('stroke-linecap', 'round')
                 .style('stroke-linejoin', 'round');
+        },
+
+        updateProvinceLabels(transform) {
+            const zoomLevel = transform.k;
+            const minZoomLevel = 2; // Adjust this threshold as needed
+            
+            this.g.selectAll('.province-labels')
+                .style('display', zoomLevel >= minZoomLevel ? 'block' : 'none')
+                .style('font-size', () => {
+                    // Scale font size based on zoom level
+                    const baseSize = 1;
+                    return `${baseSize * Math.min(zoomLevel, 1)}px`; // Cap at 3px max
+                });
+                this.initProvinceLabels();
         },
 
         updateTooltip(d) {
