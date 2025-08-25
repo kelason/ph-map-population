@@ -22,7 +22,7 @@
                     <option value="Cities">Cities</option>
                     <option value="Provinces">Provinces</option>
                     <option value="Regions">Regions</option>
-                    <option value="Rising">Rising</option>
+                    <option value="popgro">Population Growth</option>
                 </select>
             </div>
         </div>
@@ -47,12 +47,21 @@
             :topRegions="searchBy.Regions.topRegions"
             :formatNumber="formatNumber"
         />
+
+        <population-growth
+            v-if="selectedSearchPopulation === 'popgro'"
+            :top10CitiesGrowth="searchBy.PopulationGrowth.top10CitiesGrowth"
+            :bottom10CitiesGrowth="searchBy.PopulationGrowth.bottom10CitiesGrowth"
+            :formatPopulationProvince="formatPopulationProvince"
+            :formatNumber="formatNumber"
+        />
     </div>
 </template>
 <script>
 import Cities from './SearchBy/Cities.vue';
 import Provinces from './SearchBy/Provinces.vue';
 import Regions from './SearchBy/Regions.vue';
+import PopulationGrowth from './SearchBy/PopulationGrowth.vue';
 
 export default {
     name: 'PopulationSearch',
@@ -60,6 +69,7 @@ export default {
         Cities,
         Provinces,
         Regions,
+        PopulationGrowth,
     },
     props: {
         selectedSearchPopulation: {

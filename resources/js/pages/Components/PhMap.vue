@@ -78,7 +78,11 @@ export default {
                 },
                 Regions: {
                     topRegions: [],
-                }
+                },
+                PopulationGrowth: {
+                    top10CitiesGrowth: [],
+                    bottom10CitiesGrowth: [],
+                },
             },
             populationDensity: [
                 {
@@ -165,6 +169,9 @@ export default {
         },
 
         processPopulationData() {
+            // Clear the array before processing new data
+            this.allMuniFeatures = [];
+
             this.provincesTopoJson.forEach((provinceData, index) => {
                 const topoJsonFile = provinceData;
                 const topoJsonObjectName = muniCitiesTopoJsonName[index];
@@ -174,6 +181,7 @@ export default {
 
                     features.forEach((feature) => {
                         feature.properties.population = this.populationMap[feature.id][`population_${this.selectedYear}`];
+                        feature.properties.population_growth = this.populationMap[feature.id].population_2020 - this.populationMap[feature.id].population_2015;
                         feature.properties.geographic_level = this.populationMap[feature.id].geographic_level;
                     });
 
@@ -183,6 +191,7 @@ export default {
         },
 
         processProvinceData() {
+            this.allProvFeatures = [];
             this.populations.forEach((provinceData) => {
                 provinceData.population = provinceData[`population_${this.selectedYear}`];
                 this.allProvFeatures.push(provinceData);
@@ -265,10 +274,28 @@ export default {
             );
         },
 
+        getTopPopulationDataByCitiesGrowth() {
+            // For top regions by population
+            this.searchBy.PopulationGrowth.top10CitiesGrowth = this.getTopNByPopulation(
+                this.allMuniFeatures,
+                10,
+                f => f.properties.population_growth,
+                true
+            );
+
+            this.searchBy.PopulationGrowth.bottom10CitiesGrowth = this.getTopNByPopulation(
+                this.allMuniFeatures,
+                10,
+                f => f.properties.population_growth,
+                false
+            );
+        },
+
         getSearchbyData() {
-            this.getTopPopulationDataByCities();
-            this.getTopPopulationDataByProvinces();
-            this.getTopPopulationDataByRegions();
+                this.getTopPopulationDataByCities();
+                this.getTopPopulationDataByProvinces();
+                this.getTopPopulationDataByRegions();
+                this.getTopPopulationDataByCitiesGrowth();
         },
 
         drawProvinces() {
@@ -365,13 +392,30 @@ export default {
 
         updateTooltip(d) {
             let targetData = d.target.__data__;
+            const psgc = targetData.id;
+            const pop2015 = this.populationMap[psgc]?.population_2015 || 0;
+            const pop2020 = this.populationMap[psgc]?.population_2020 || 0;
+            const difference = pop2020 - pop2015;
+            
+            // Generate comparison icon HTML
+            let comparisonIcon = '';
+            if (this.selectedYear === '2020') {
+                if (difference > 0) {
+                comparisonIcon = '<span style="color:#4caf50; font-weight:bold;">↗</span>';
+                } else if (difference < 0) {
+                comparisonIcon = '<span style="color:#f44336; font-weight:bold;">↘</span>';
+                } else {
+                comparisonIcon = '<span style="color:#ff9800; font-weight:bold;">＝</span>';
+                }
+            }
             this.populationDensity.cityName = `<strong>Municipal/City</strong>: ${targetData.properties.adm3_en}, ${this.formatPopulationProvince(targetData.properties.adm2_psgc)}`;
-            this.populationDensity.count = `<strong>Population Count (${this.selectedYear})</strong>: ${this.formatNumber(targetData.properties.population)}`;
+            this.populationDensity.count = `<strong>Population Count (${this.selectedYear})</strong>: ${this.formatNumber(targetData.properties.population)} ${comparisonIcon}`;
         },
 
         updateMapData() {
             this.processData();
             this.drawProvinces();
+            this.getSearchbyData();
         },
 
         formatNumber(num) {
