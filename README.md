@@ -33,7 +33,14 @@ Ensure you have the following installed:
 
 ## 💻 Development
 
-### Run the development server
+### Run the development servers
+
+1. **Start the PHP application server:**
+```bash
+php artisan serve
+```
+
+2. **Start the Vite compilation server:**
 ```bash
 npm run dev
 ```
