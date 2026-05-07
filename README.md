@@ -51,6 +51,16 @@ The project uses the new ESLint Flat Config.
 npm run lint
 ```
 
+## Preview
+
+![PH Map Sample](public/gif/PH-Map-sample.gif)
+
+## Accessing the Application
+
+Once the build process is complete, you can access the application at:
+[http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+
 ## 🗺️ Project Structure & Mapping Logic
 
 The core visualization logic resides in `resources/js/pages/Components/PhMap.vue`.
