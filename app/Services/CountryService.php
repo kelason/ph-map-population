@@ -2,6 +2,7 @@
 
 namespace App\Services;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class CountryService
 {
@@ -12,9 +13,8 @@ class CountryService
         $cacheKey = 'country_data';
         
         return Cache::remember($cacheKey, now()->addHours(24), function () {
-            $jsonStr = file_get_contents($this->PhHostName);
-            $country = json_decode($jsonStr);
-            return $country;
+            $response = Http::get($this->PhHostName);
+            return $response->successful() ? $response->object() : null;
         });
     }
 }

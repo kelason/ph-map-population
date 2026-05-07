@@ -2,6 +2,7 @@
 
 namespace App\Services;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class ProvinceService
 {
@@ -108,23 +109,18 @@ class ProvinceService
         $cacheKey = 'provinces_data_' . md5(implode(',', $this->muniCities));
         
         return Cache::remember($cacheKey, now()->addHours(24), function () {
-            $ch = curl_init();
-            $decoded = [];
-            foreach ($this->muniCities as $muniCities) {
-                curl_setopt($ch, CURLOPT_URL, $this->phHostName.$muniCities);
-                curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            // Use HTTP Pool to fetch all files concurrently
+            $responses = Http::pool(fn ($pool) => 
+                collect($this->muniCities)->map(fn ($file) => 
+                    $pool->as($file)->get($this->phHostName . $file)
+                )
+            );
 
-                $resp = curl_exec($ch);
-
-                if ($e = curl_error($ch)) {
-                    echo $e;
-                } else {
-                    $decoded[] = json_decode($resp);
-                }
-            }
-            return $decoded;
+            return collect($responses)
+                ->filter(fn ($response) => $response->successful())
+                ->map(fn ($response) => $response->json())
+                ->values()
+                ->all();
         });
     }
 }

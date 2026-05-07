@@ -44,14 +44,15 @@ class PopulationService
                     continue;
                 }
                 
-                // Combine headers with row data
+                // Check columns count to prevent errors if row is malformed
+                if (count($headers) !== count($row)) continue;
+
                 $combined = array_combine($headers, $row);
                 
-                // Skip records with geographic_level = "Bgy" or missing population data
-                // Also skip if population data for 2015 or 2020 is missing
-                // This ensures we only keep valid province or city data
+                // Filter early before heavy processing
+                $level = $combined['geographic_level'] ?? '';
                 if (
-                    (isset($combined['geographic_level']) && $combined['geographic_level'] === 'Bgy') ||
+                    $level === 'Bgy' || 
                     empty($combined['population_2015']) ||
                     empty($combined['population_2020'])
                 ) {

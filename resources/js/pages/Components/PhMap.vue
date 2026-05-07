@@ -22,19 +22,17 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import * as d3 from 'd3';
 import * as topojson from 'topojson';
 import { muniCitiesTopoJsonName } from '../../../utils/constants.js';
-import PopulationDensity from './Pages/PopulationDensity.vue';
-import PopulationSearch from './Pages/PopulationSearch/PopulationSearch.vue';
-import Zoom from './Pages/Zoom.vue';
 
 export default {
     name: 'PhMap',
     components: {
-        Zoom,
-        PopulationDensity,
-        PopulationSearch,
+        Zoom: defineAsyncComponent(() => import('./Pages/Zoom.vue')),
+        PopulationDensity: defineAsyncComponent(() => import('./Pages/PopulationDensity.vue')),
+        PopulationSearch: defineAsyncComponent(() => import('./Pages/PopulationSearch/PopulationSearch.vue')),
     },
     props: {
         countryTopoJson: {
@@ -67,6 +65,7 @@ export default {
             initialScale: null,
             width: 0,
             height: 0,
+            labelsInitialized: false,
             searchBy: {
                 Cities: {
                     top10Cities: [],
@@ -97,7 +96,10 @@ export default {
     },
     mounted() {
         this.initializeMap();
-        this.getSearchbyData();
+        // Lazy load calculations to keep the UI responsive during initial render
+        setTimeout(() => {
+            this.getSearchbyData();
+        }, 500);
     },
     methods: {
         initializeMap() {
@@ -346,7 +348,9 @@ export default {
         },
 
         // Initialize labels with responsive setup
-        initProvinceLabels() { 
+        initProvinceLabels() {
+            if (this.labelsInitialized) return;
+
             this.g.selectAll('.province-labels')
                 .data(this.allMuniFeatures)
                 .enter()
@@ -373,13 +377,20 @@ export default {
                 .style('stroke', 'white')
                 .style('stroke-width', '0.5px')
                 .style('stroke-linecap', 'round')
-                .style('stroke-linejoin', 'round');
+                .style('stroke-linejoin', 'round')
+                .style('display', 'none');
+
+            this.labelsInitialized = true;
         },
 
         updateProvinceLabels(transform) {
             const zoomLevel = transform.k;
             const minZoomLevel = 2; // Adjust this threshold as needed
             
+            if (zoomLevel >= minZoomLevel && !this.labelsInitialized) {
+                this.initProvinceLabels();
+            }
+
             this.g.selectAll('.province-labels')
                 .style('display', zoomLevel >= minZoomLevel ? 'block' : 'none')
                 .style('font-size', () => {
@@ -387,7 +398,6 @@ export default {
                     const baseSize = 1;
                     return `${baseSize * Math.min(zoomLevel, 1)}px`; // Cap at 3px max
                 });
-                this.initProvinceLabels();
         },
 
         updateTooltip(d) {

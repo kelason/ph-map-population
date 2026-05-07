@@ -58,18 +58,15 @@
     </div>
 </template>
 <script>
-import Cities from './SearchBy/Cities.vue';
-import Provinces from './SearchBy/Provinces.vue';
-import Regions from './SearchBy/Regions.vue';
-import PopulationGrowth from './SearchBy/PopulationGrowth.vue';
+import { defineAsyncComponent } from 'vue';
 
 export default {
     name: 'PopulationSearch',
     components: {
-        Cities,
-        Provinces,
-        Regions,
-        PopulationGrowth,
+        Cities: defineAsyncComponent(() => import('./SearchBy/Cities.vue')),
+        Provinces: defineAsyncComponent(() => import('./SearchBy/Provinces.vue')),
+        Regions: defineAsyncComponent(() => import('./SearchBy/Regions.vue')),
+        PopulationGrowth: defineAsyncComponent(() => import('./SearchBy/PopulationGrowth.vue')),
     },
     props: {
         selectedSearchPopulation: {
