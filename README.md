@@ -69,10 +69,20 @@ Ensure you have the following installed:
 ## 💻 Development
 
 ### Run the development servers
-Start the concurrent development servers (Artisan Serve, Queue Listener, Logs, and Vite dev server):
+To run this application locally, you need to start multiple services simultaneously (the backend web server, the frontend asset compiler, the queue listener, and the logs stream). 
+
+Instead of opening four separate terminal tabs and running four distinct commands, you can start everything at once:
 ```bash
 composer dev
 ```
+
+This command uses `concurrently` under the hood to run all required development services inside a single terminal window:
+- **`php artisan serve`**: Serves the PHP backend application locally (defaults to http://127.0.0.1:8000).
+- **`npm run dev`**: Compiles and hot-reloads the Vue 3 and D3 frontend assets in real-time as you make changes.
+- **`php artisan queue:listen`**: Listens for background tasks (useful for auth flows or deferred jobs).
+- **`php artisan pail`**: Streams warnings and errors from the application code directly to your terminal in real-time (saving you from checking `laravel.log` manually).
+
+*Closing the terminal or pressing `Ctrl+C` will automatically stop all four processes together.*
 
 ### Lint and Fix files
 The project uses the new ESLint Flat Config.
