@@ -15,10 +15,11 @@ An interactive data visualization project for Philippine population density, bui
 ## 🛠️ Prerequisites
 
 Ensure you have the following installed:
-- Node.js (LTS version recommended)
-- npm, yarn, or pnpm
+- **PHP** (>= 8.2)
+- **Composer**
+- **Node.js** (LTS version recommended) & **npm**
 
-## 📦 Installation
+## 📦 Installation & Setup
 
 1. **Clone the repository:**
    ```bash
@@ -28,21 +29,49 @@ Ensure you have the following installed:
 
 2. **Install dependencies:**
    ```bash
+   composer install
    npm install
+   ```
+
+3. **Configure environment:**
+   Copy the example environment file and generate the application key:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+
+4. **Initialize database (Optional):**
+   By default, the `.env` configuration uses SQLite to store cached map data, sessions, and queue jobs:
+   ```env
+   DB_CONNECTION=sqlite
+   CACHE_STORE=database
+   SESSION_DRIVER=database
+   QUEUE_CONNECTION=database
+   ```
+   To initialize the database, create the SQLite file and run migrations:
+   ```bash
+   touch database/database.sqlite
+   php artisan migrate
+   ```
+
+   *Alternatively, if you want to run completely **database-free**, edit your `.env` to use file/sync drivers:*
+   ```env
+   CACHE_STORE=file
+   SESSION_DRIVER=file
+   QUEUE_CONNECTION=sync
+   ```
+
+5. **Build frontend assets:**
+   ```bash
+   npm run build
    ```
 
 ## 💻 Development
 
 ### Run the development servers
-
-1. **Start the PHP application server:**
+Start the concurrent development servers (Artisan Serve, Queue Listener, Logs, and Vite dev server):
 ```bash
-php artisan serve
-```
-
-2. **Start the Vite compilation server:**
-```bash
-npm run dev
+composer dev
 ```
 
 ### Lint and Fix files
@@ -57,8 +86,10 @@ npm run lint
 
 ## Accessing the Application
 
-Once the build process is complete, you can access the application at:
+Once the development servers are running, access the application at:
 [http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+*Note: On your first load, it will fetch geographic TopoJSON maps from GitHub and cache them locally in the database. Give it a few seconds to finish rendering.*
 
 
 ## 🗺️ Project Structure & Mapping Logic
