@@ -4,9 +4,10 @@ An interactive data visualization project for Philippine population density, bui
 
 ## 🚀 Tech Stack
 
-- **Framework:** [Vue.js 3](https://vuejs.org/)
+- **Backend Framework:** [Laravel 12](https://laravel.com/) (PHP)
+- **Frontend Framework:** [Vue.js 3](https://vuejs.org/) with [Inertia.js](https://inertiajs.com/)
 - **Visualization:** [D3.js](https://d3js.org/) & [TopoJSON](https://github.com/topojson/topojson)
-- **Language:** TypeScript / JavaScript
+- **Languages:** PHP, TypeScript / JavaScript
 - **Linting & Formatting:** 
   - [ESLint](https://eslint.org/) (Flat Config)
   - [@vue/eslint-config-typescript](https://github.com/vuejs/eslint-config-typescript)
@@ -104,7 +105,7 @@ Once the development servers are running, access the application at:
 
 ## 🗺️ Project Structure & Mapping Logic
 
-The core visualization logic resides in `resources/js/pages/Components/PhMap.vue`.
+The core visualization logic resides in [`resources/js/pages/Components/PhMap.vue`](resources/js/pages/Components/PhMap.vue).
 
 - **Data Binding:** The component accepts `countryTopoJson`, `provincesTopoJson`, and `populations` as props.
 - **Projection:** Uses `d3.geoMercator()` centered on coordinates `[122.42715, 12.499176]` to accurately render the Philippine archipelago.
@@ -116,7 +117,7 @@ The core visualization logic resides in `resources/js/pages/Components/PhMap.vue
 
 ## 🔧 Configuration Notes
 
-- **ESLint:** Configured to work with Vue + TypeScript. If you are using VS Code, ensure the ESLint extension is updated to support Flat Config (`eslint.config.mjs`).
+- **ESLint:** Configured to work with Vue + TypeScript. If you are using VS Code, ensure the ESLint extension is updated to support Flat Config (`eslint.config.js`).
 - **Prettier:** Integrated into the linting workflow to turn off conflicting stylistic rules.
 
 ## 📄 License
