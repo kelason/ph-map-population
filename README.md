@@ -49,9 +49,15 @@ Ensure you have the following installed:
    SESSION_DRIVER=database
    QUEUE_CONNECTION=database
    ```
+   > **Windows users:** Ensure the `pdo_sqlite` extension is enabled in your `php.ini`.
+   > Find the line `;extension=pdo_sqlite` and remove the semicolon so it reads `extension=pdo_sqlite`.
+   > You can locate your `php.ini` by running `php --ini`.
+
    To initialize the database, create the SQLite file and run migrations:
    ```bash
-   touch database/database.sqlite
+   touch database/database.sqlite          # Linux/macOS
+   # On Windows PowerShell, use:
+   # New-Item -ItemType File -Path "database/database.sqlite" -Force
    php artisan migrate
    ```
 
@@ -70,9 +76,7 @@ Ensure you have the following installed:
 ## 💻 Development
 
 ### Run the development servers
-To run this application locally, you need to start multiple services simultaneously (the backend web server, the frontend asset compiler, the queue listener, and the logs stream). 
-
-Instead of opening four separate terminal tabs and running four distinct commands, you can start everything at once:
+To run this application locally, you need to start multiple services simultaneously. Instead of opening separate terminal tabs, you can start everything at once:
 ```bash
 composer dev
 ```
@@ -81,9 +85,11 @@ This command uses `concurrently` under the hood to run all required development 
 - **`php artisan serve`**: Serves the PHP backend application locally (defaults to http://127.0.0.1:8000).
 - **`npm run dev`**: Compiles and hot-reloads the Vue 3 and D3 frontend assets in real-time as you make changes.
 - **`php artisan queue:listen`**: Listens for background tasks (useful for auth flows or deferred jobs).
-- **`php artisan pail`**: Streams warnings and errors from the application code directly to your terminal in real-time (saving you from checking `laravel.log` manually).
+- **`php artisan pail`** *(Linux/macOS only)*: Streams warnings and errors from the application code directly to your terminal in real-time.
 
-*Closing the terminal or pressing `Ctrl+C` will automatically stop all four processes together.*
+> **Note:** On Windows, `pail` is automatically skipped because it requires the `pcntl` extension (Unix-only). You can check application logs in `storage/logs/laravel.log` instead.
+
+*Closing the terminal or pressing `Ctrl+C` will automatically stop all processes together.*
 
 ### Lint and Fix files
 The project uses the new ESLint Flat Config.
