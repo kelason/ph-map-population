@@ -13,8 +13,12 @@ class CountryService
         $cacheKey = 'country_data';
         
         return Cache::remember($cacheKey, now()->addHours(24), function () {
-            $response = Http::get($this->PhHostName);
-            return $response->successful() ? $response->object() : null;
+            try {
+                $response = Http::get($this->PhHostName);
+                return $response->successful() ? $response->object() : null;
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return null;
+            }
         });
     }
 }

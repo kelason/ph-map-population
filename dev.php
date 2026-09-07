@@ -24,7 +24,8 @@ if ($mode === 'ssr') {
         : '"php artisan serve" "php artisan queue:listen --tries=1" "php artisan pail --timeout=0" "npm run dev" --names=server,queue,logs,vite';
 }
 
-$cmd = sprintf('npx concurrently -c "%s" %s --kill-others', $colors, $commands);
+$rawFlag = $isWindows ? '--raw' : '';
+$cmd = sprintf('npx concurrently -c "%s" %s --kill-others %s', $colors, $commands, $rawFlag);
 
 if ($isWindows) {
     echo "[dev] Windows detected — skipping pail (requires pcntl extension)\n";

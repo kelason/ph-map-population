@@ -109,18 +109,28 @@ class ProvinceService
         $cacheKey = 'provinces_data_' . md5(implode(',', $this->muniCities));
         
         return Cache::remember($cacheKey, now()->addHours(24), function () {
-            // Use HTTP Pool to fetch all files concurrently
-            $responses = Http::pool(fn ($pool) => 
-                collect($this->muniCities)->map(fn ($file) => 
-                    $pool->as($file)->get($this->phHostName . $file)
-                )
-            );
+            $results = [];
+            
+            // Process in chunks of 10 to avoid socket/connection limits on Windows
+            $chunks = array_chunk($this->muniCities, 10);
+            
+            foreach ($chunks as $chunk) {
+                $responses = Http::pool(fn ($pool) => 
+                    collect($chunk)->map(fn ($file) => 
+                        $pool->as($file)->timeout(30)->retry(2, 100)->get($this->phHostName . $file)
+                    )
+                );
 
-            return collect($responses)
-                ->filter(fn ($response) => $response->successful())
-                ->map(fn ($response) => $response->json())
-                ->values()
-                ->all();
+                $chunkResults = collect($responses)
+                    ->filter(fn ($response) => $response instanceof \Illuminate\Http\Client\Response && $response->successful())
+                    ->map(fn ($response) => $response->json())
+                    ->values()
+                    ->all();
+                    
+                $results = array_merge($results, $chunkResults);
+            }
+
+            return $results;
         });
     }
 }

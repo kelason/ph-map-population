@@ -216,7 +216,7 @@ export default {
             
             d3.quickselect(result, quickselectIndex, 0, result.length - 1, comparator);
             
-            result.length = n;
+            result.length = Math.min(n, result.length);
             
             result.sort(top 
                 ? (a, b) => getPopulation(b) - getPopulation(a)

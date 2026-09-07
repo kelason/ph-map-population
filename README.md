@@ -20,6 +20,26 @@ Ensure you have the following installed:
 - **Composer**
 - **Node.js** (LTS version recommended) & **npm**
 
+### Windows `php.ini` Configuration
+
+Windows PHP installations require a few manual tweaks. Run `php --ini` to locate your `php.ini` file, then make the following changes:
+
+1. **Enable the SQLite driver** — required if using the default SQLite database:
+   ```ini
+   ;extension=pdo_sqlite    ← remove the semicolon:
+   extension=pdo_sqlite
+   ```
+
+2. **Fix SSL certificate errors** — required for fetching TopoJSON maps from GitHub:
+   - Download the CA bundle: https://curl.se/ca/cacert.pem
+   - Save it to your PHP directory (e.g., `C:\php\cacert.pem`)
+   - Update these two lines in `php.ini`:
+   ```ini
+   curl.cainfo = "C:\php\cacert.pem"
+   openssl.cafile = "C:\php\cacert.pem"
+   ```
+   *(Replace the path with the actual location where you saved `cacert.pem`)*
+
 ## 📦 Installation & Setup
 
 1. **Clone the repository:**
@@ -49,9 +69,6 @@ Ensure you have the following installed:
    SESSION_DRIVER=database
    QUEUE_CONNECTION=database
    ```
-   > **Windows users:** Ensure the `pdo_sqlite` extension is enabled in your `php.ini`.
-   > Find the line `;extension=pdo_sqlite` and remove the semicolon so it reads `extension=pdo_sqlite`.
-   > You can locate your `php.ini` by running `php --ini`.
 
    To initialize the database, create the SQLite file and run migrations:
    ```bash
@@ -72,6 +89,31 @@ Ensure you have the following installed:
    ```bash
    npm run build
    ```
+
+## 🐳 Docker Setup
+
+This project includes a multi-stage `Dockerfile` and `docker-compose.yml` for easy containerized deployment. This setup automatically builds the Vue/Vite assets and serves the app using Nginx and PHP-FPM.
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/kevin0117/ph-map-population.git
+   cd ph-map-population
+   ```
+
+2. **Configure environment:**
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Build and start the containers:**
+   ```bash
+   docker-compose up -d --build
+   ```
+
+4. **Access the application:**
+   Open your browser and navigate to [http://localhost:8080](http://localhost:8080).
+
+*(Note: The Docker configuration automatically installs dependencies, configures SQLite with migrations, and builds frontend assets.)*
 
 ## 💻 Development
 
